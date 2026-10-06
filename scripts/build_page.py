@@ -17,6 +17,7 @@ import model  # noqa: E402
 MD = ROOT / "report" / "case.md"
 OUT = ROOT / "index.html"
 REPO = "https://github.com/massimo-pazzi/fastfood-assistant-case"
+KOLOCALL = "https://kolocall.com/price/"
 
 
 def esc(t):
@@ -68,7 +69,7 @@ def fig_sources():
 def fig_topics():
     mx = 40
     html = '<div class="ranges">'
-    for name, lo, hi, _, _ in model.TOPICS:
+    for name, lo, hi, *_ in model.TOPICS:
         lab = f"{lo}–{hi}%" if lo != hi else f"{lo}%"
         if lo == 0:
             lab = f"до {hi}%"
@@ -87,7 +88,7 @@ def fig_topics():
 
 def fig_boundaries():
     cols = [("Отвечает сам", ["Статус и состав заказа, история последних заказов", "Баллы, списания и действующие акции",
-                              "Состав блюд, калорийность, аллергены", "Ближайший ресторан и часы работы",
+                              "Состав и калорийность блюд; аллергены — только из справочника", "Ближайший ресторан и часы работы",
                               "Возврат или довоз при неполном заказе", "Рекомендации по истории заказов"]),
             ("Передаёт оператору", ["Жалобы на качество еды и обслуживание", "Чистота и гигиена в ресторане",
                                     "Спорные возвраты и компенсации", "Всё, что не распознал уверенно"]),
@@ -99,28 +100,55 @@ def fig_boundaries():
     return figure("Границы продукта", html)
 
 
-def fig_tree():
-    b, v, t = model.scenarios()
-    tiles = "".join(
-        f'<div class="tile"><div class="tile-n">{1 + var}</div><div class="tile-h">{esc(name)}</div>'
-        f'<div class="tile-s">{"1 базовый" + (f" + {var} вариаций" if var else "")}</div>'
-        f'<div class="tile-e">{esc(ex)}</div></div>'
-        for name, _, _, var, ex in model.TOPICS)
-    return figure(f"Дерево сценариев: {b} базовых и {v} вариаций — всего {t}", f'<div class="tiles">{tiles}</div>',
-                  "Мультиязычность не добавляет сценариев: меняется язык диалога, а не его ветки.")
+def fig_jobs():
+    rows = [("Я заплатил, еды нет, курьер не звонит", "Звонит в контакт-центр и ждёт на линии",
+             "Знать, когда приедет еда, или вернуть деньги", "Статус и время из CRM; при сбое — возврат или передача оператору"),
+            ("В заказе не хватает позиции", "Пишет в поддержку и доказывает, что её не было",
+             "Получить недостающее или деньги без спора", "Показывает состав заказа и оформляет возврат или довоз"),
+            ("Еда холодная или испорчена", "Оставляет жалобу и не знает, услышали ли её",
+             "Чтобы жалобу приняли и компенсировали", "Фиксирует жалобу с привязкой к заказу и передаёт оператору"),
+            ("Не начислили баллы или кэшбэк", "Ищет в приложении, потом пишет в поддержку",
+             "Увидеть баллы и понять, когда они придут", "Показывает баллы и операции из CRM, правила акции — из справочника")]
+    return figure("От темы обращения к задаче гостя", table(["Задача гостя", "Что делает сейчас", "Что для него успех",
+                                                              "Что делает ассистент"], rows))
+
+
+def fig_releases():
+    names = {1: "Релиз 1", 2: "Релиз 2", 0: "Без ветвления"}
+    groups = ""
+    for r in (1, 2, 0):
+        ts = [t for t in model.TOPICS if t[4] == r]
+        n = sum(1 + t[5] for t in ts)
+        share = model.release_share(r)
+        tiles = "".join(f'<div class="tile"><div class="tile-h">{esc(t[0])}</div>'
+                        f'<div class="tile-s">{"1 сценарий" if not t[5] else f"1 + {t[5]} вариаций"} · '
+                        f'{t[1] if t[1] == t[2] else f"{t[1]}–{t[2]}" if t[1] else f"до {t[2]}"}%</div>'
+                        f'<div class="tile-e">{esc(t[7])}</div></div>' for t in ts)
+        groups += (f'<div class="rel rel{r}"><div class="rel-h">{names[r]} · {n} сценариев · ≈{share:.0f}% потока</div>'
+                   f'<div class="tiles">{tiles}</div></div>')
+    b, v, t = model.scenarios_full()
+    return figure("Очерёдность: что в первой версии, что потом", groups,
+                  f"Полное дерево — {t} сценариев ({b} базовых и {v} вариаций); после приоритизации — "
+                  f"{sum(model.scenarios_by_release().values())}. Доля потока — по серединам оценок. Данные — data/topics.csv.")
 
 
 def fig_load():
-    L = model.load()
-    rows = [("Обращений в день, верхняя граница", num(model.DIALOGS_PER_DAY_MAX), "оценка по установкам приложения"),
-            ("Сообщений гостя в одном обращении", f"{model.STEPS[0]}–{model.STEPS[1]}", "вопрос, ответ, уточнение, передача оператору"),
-            ("Сообщений в день", f"≈ {L['msgs_day'] / 1e6:.2f} млн".replace(".", ","), "при 5 сообщениях в обращении"),
-            ("Сообщений в секунду, в среднем", f"≈ {L['avg_msgs_s']:.0f}", f"нагрузка распределена на {model.ACTIVE_HOURS} часов"),
-            ("Новых обращений в секунду, в пик", num(model.PEAK_DIALOGS_PER_SEC), "обед, вечер, выходные"),
-            ("<strong>Сообщений в минуту, в пик</strong>", f"<strong>≈ {num(L['peak_msgs_min'])}</strong>", "по этой цифре делается сайзинг серверов")]
-    return figure("От обращений к сообщениям: какую нагрузку должен держать ассистент",
-                  table(["Показатель", "Значение", "Откуда"], rows, "num txtlast"),
-                  "Данных об активной аудитории заказчик не предоставил, поэтому нагрузка оценена сверху. Расчёт — scripts/model.py.")
+    f, b, lim = model.funnel(), model.base_sizing(), model.limit_sizing()
+    fr = [("Гостей в день", num(model.GUESTS_DAY), "порядок масштаба федеральной сети"),
+          ("Заказов через приложение", num(f["app_orders"]), f"{model.APP_ORDER_SHARE:.0%} заказов — допущение"),
+          ("Проблемных заказов", num(f["problems"]), f"{model.PROBLEM_SHARE:.0%} — допущение, ориентир 2–5%"),
+          ("Обратились в поддержку", num(f["contacts"]), f"{model.CONTACT_SHARE:.0%} — допущение"),
+          ("<strong>Обращений в день</strong>", f"<strong>≈ {num(f['dialogs'])}</strong>",
+           f"проблемы с заказом — {model.PROBLEM_TOPICS:.0%} всех обращений, по темам")]
+    t1 = table(["Шаг воронки", "Значение", "Откуда"], fr, "num txtlast")
+    rows = [(n, num(s["dialogs_day"]), num(s["msgs_day"]), f"≈ {num(s['peak_msgs_min'])}")
+            for n, s in ((f"Базовый: пиковый час ×{model.PEAK_FACTOR}, запас ×{model.PROMO_MARGIN} на промо", b),
+                         ("Предельный: оценка предложения по установкам", lim))]
+    t2 = table(["Сценарий", "Обращений в день", "Сообщений в день", "Сообщений в минуту в пик"], rows, "num")
+    return figure("Нагрузка: базовый сценарий по воронке и предельный",
+                  t1 + '<div class="gap"></div>' + t2,
+                  "В одном обращении 4–6 сообщений гостя, нагрузка распределена на 16 часов. Объёмы предложения "
+                  "уменьшены на 30% по соображениям конфиденциальности. Расчёт — scripts/model.py, data/load.csv.")
 
 
 COMP = [
@@ -156,20 +184,70 @@ def fig_competitors():
 
 
 def fig_metrics():
-    rows = [("Доля обращений, закрытых без оператора", "Закрытые ассистентом обращения ко всем обращениям",
-             "Главный эффект для контакт-центра"),
-            ("Доля передач оператору по темам", "Передачи к обращениям — отдельно по каждой теме", "Показывает, каких сценариев не хватает"),
-            ("Оценка гостя после диалога", "Короткий опрос в конце диалога", "Не даёт выдать «отфутболивание» за успех"),
+    c1 = model.containment(1)
+    rows = [("Доля обращений, закрытых без оператора", "Закрытые ассистентом ко всем обращениям",
+             f"Релиз 1 — около {c1:.0f}% всего потока: по допущениям модели 70% по заказам и лояльности, 20% по жалобам"),
+            ("Передачи оператору по теме", "Передачи к обращениям — отдельно по каждой теме",
+             "Больше 50% — сценарий дорабатывается; больше 70% после двух доработок — тема уходит сразу к оператору"),
+            ("Оценка гостя после диалога", "Короткий опрос в конце диалога",
+             "Ниже, чем у операторов на тех же темах, — провал: релиз не расширяем"),
             ("Повторные обращения по той же теме", "Гость вернулся с тем же вопросом в течение недели",
-             "Проблема решена по-настоящему, а не формально"),
-            ("Точность темы и языка", "Ручная разметка выборки диалогов", "Качество модели"),
+             "Не выше, чем после операторов"),
+            ("Точность темы и языка", "Ручная разметка выборки диалогов", "Не ниже 90% — ориентир предложения"),
             ("Обращения в контакт-центр по темам ассистента", "До и после запуска, по тем же темам",
-             "Проверка гипотезы о снижении на 30–50%")]
-    return figure("Как проверить, что ассистент работает", table(["Метрика", "Как считается", "Зачем"], rows))
+             "Снижение на 30–50% — гипотеза, которую проверяет пилот")]
+    return figure("Метрики и пороги, которые управляют решениями", table(["Метрика", "Как считается", "Порог"], rows))
+
+
+def fig_economics():
+    th = model.threshold_dialogs_day()
+    f = model.funnel()
+    tiles = [(f"≈ {model.PRICE / 1e6:.0f} млн ₽", "цена проекта"),
+             (f"{model.COST_PER_DIALOG} ₽", "диалог оператора чата на аутсорсинге"),
+             (f"≈ {th:.0f}", "обращений в день без оператора — окупаемость за год"),
+             (f"{th / f['dialogs'] * 100:.0f}%", "базового потока")]
+    kp = '<div class="kpis">' + "".join(f'<div class="kpi"><div class="kpi-v">{v}</div><div class="kpi-l">{esc(l)}</div></div>'
+                                        for v, l in tiles) + "</div>"
+    rows = []
+    for cost in (40, 66, 100, 150):
+        t = model.PRICE / (cost * 365)
+        rows.append((f"{cost} ₽" if cost != model.COST_PER_DIALOG else f"<strong>{cost} ₽</strong>", f"≈ {num(t)}",
+                     f"{t / f['dialogs'] * 100:.1f}%".replace(".", ",")))
+    return figure("Порог окупаемости: сколько обращений ассистент должен закрывать сам",
+                  kp + table(["Стоимость обращения у заказчика", "Обращений в день без оператора",
+                              "Доля базового потока"], rows, "num"),
+                  f'Стоимость диалога — цена чат-консультанта сверх пакета у {link("Kolocall", KOLOCALL)}. Цена '
+                  'проекта округлена; эксплуатация и сопровождение в порог не входят.')
+
+
+def fig_check():
+    rows = [("1", "Выгрузить обращения контакт-центра за 3–6 месяцев", "Реальный поток и пики вместо оценки по установкам"),
+            ("2", "Вручную разметить выборку 300–500 обращений по тем же десяти темам", "Фактические доли тем"),
+            ("3", "Сверить доли с оценкой из раздела 2 и пересобрать релизы", "Состав первой версии по данным, а не по отзывам"),
+            ("4", "Оценить долю обращений, вызванных сбоями приложения и ресторанов", "Размер второй ценности — отчёта о сбоях"),
+            ("5", "Пересчитать базовую нагрузку и порог окупаемости на фактических цифрах", "Сайзинг и экономика без допущений")]
+    return figure("Первые две недели после доступа к данным", table(["", "Что делаем", "Что получаем"], rows))
+
+
+def fig_risks():
+    rows = [("<strong>Неверный ответ об аллергенах</strong>", "Вред здоровью гостя и ответственность сети",
+             "Только точная выдача из справочника, без генерации; при сомнении — оператор; оговорка о следах аллергенов"),
+            ("Ассистент как стена перед оператором", "Гость не может дойти до человека",
+             "Кнопка «позвать оператора» в каждом диалоге; оценка гостя и повторные обращения как антиметрики"),
+            ("Статус заказа в CRM отстаёт", "Уверенный неверный ответ по главной теме",
+             "Показывать время обновления статуса; если данные устарели — сказать об этом и передать оператору"),
+            ("Выдуманные цифры по баллам и акциям", "Ошибка в деньгах гостя",
+             "Цифры только из CRM и справочника акций; спорные начисления — оператору"),
+            ("Пики: обед, вечер, промо-кампании", "Деградация в момент наибольшего спроса",
+             "Сайзинг с запасом на промо; при перегрузке — очередь и передача оператору, а не отказ"),
+            ("Ответы на языке, который некому проверить", "Ошибки, которых никто не заметит",
+             "Выборочная проверка ответов носителями на каждом новом языке")]
+    return figure("Риски и что с ними делаем", table(["Риск", "Чем опасен", "Что делаем"], rows))
 
 
 def fig_refs():
     items = [f"{esc(n)}: {link(u.split('/')[2], u)}" for n, _, _, u in COMP]
+    items.append(f"Стоимость чат-консультанта на аутсорсинге: {link('Kolocall, прайс-лист', KOLOCALL)}")
     items.append("Видение продукта и коммерческое предложение (не публикуются): требования заказчика, функциональность, "
                  "сценарии, оценка нагрузки, сроки")
     return ('<ol class="sources">' + "".join(f"<li>{i}</li>" for i in items) + "</ol>"
@@ -180,11 +258,14 @@ def fig_refs():
 def author_block():
     img = base64.b64encode((ROOT / "assets/img/author.jpg").read_bytes()).decode()
     return (f'<div class="author"><img src="data:image/jpeg;base64,{img}" alt="Максим Поципух" width="64" height="64">'
-            '<span>Максим Поципух</span></div>')
+            '<span class="author-txt"><span>Максим Поципух</span><span class="author-links">'
+            '<a href="https://t.me/maxim_potsipukh" target="_blank" rel="noopener">Telegram</a> · '
+            '<a href="https://max.ru/u/f9LHodD0cOI-rqGbPaCc2EshAXaEgw4ABwO8e2-ng4zK-otGeBnO04IzH5g" target="_blank" rel="noopener">Max</a></span></span></div>')
 
 
-FIGS = {"summary": fig_summary, "sources": fig_sources, "topics": fig_topics, "boundaries": fig_boundaries,
-        "tree": fig_tree, "load": fig_load, "competitors": fig_competitors, "metrics": fig_metrics, "refs": fig_refs}
+FIGS = {"summary": fig_summary, "sources": fig_sources, "topics": fig_topics, "jobs": fig_jobs,
+        "competitors": fig_competitors, "boundaries": fig_boundaries, "releases": fig_releases, "load": fig_load,
+        "metrics": fig_metrics, "economics": fig_economics, "check": fig_check, "risks": fig_risks, "refs": fig_refs}
 
 CSS = """
 :root{
@@ -210,6 +291,7 @@ h1{font-size:clamp(1.7rem,4.2vw,2.3rem); line-height:1.18; font-weight:700; lett
 h2{font-size:1.28rem; line-height:1.3; font-weight:650; text-wrap:balance; margin:46px 0 12px; padding-top:22px; border-top:1px solid var(--rule);}
 .author{display:flex; align-items:center; gap:12px; margin:4px 0 16px; font-weight:600; font-size:15px;}
 .author img{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--rule);}
+.author-txt{display:flex; flex-direction:column; gap:2px;} .author-links{font-weight:400; font-size:13.5px; color:var(--muted);} .author-links a{color:var(--accent);}
 .author + p em{color:var(--ink-2); font-size:15px;}
 p{margin:0 0 14px;} strong{font-weight:620;} hr{display:none;}
 .chart{margin:16px 0 22px; background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:14px 16px 12px;}
@@ -253,6 +335,8 @@ th{font-weight:600; color:var(--ink-2); font-size:12.5px;}
 .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:12px;}
 .kpi{border:1px solid var(--rule); border-radius:6px; padding:12px 14px;}
 .kpi-v{font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums;} .kpi-l{font-size:13px; color:var(--ink-2); margin-top:4px; line-height:1.4;}
+.gap{height:14px;}
+.rel{margin-bottom:14px;} .rel-h{font-weight:620; font-size:13.5px; margin:4px 0 8px; color:var(--accent);} .rel0 .rel-h{color:var(--ink-2);}
 .num td:not(:first-child),.num th:not(:first-child){text-align:right; font-variant-numeric:tabular-nums;}
 .txtlast td:last-child,.txtlast th:last-child{text-align:left;}
 .dl-link{margin:-12px 0 22px; font-size:13.5px;}
