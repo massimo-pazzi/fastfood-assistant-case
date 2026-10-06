@@ -259,8 +259,8 @@ def fig_refs():
 
 def author_block():
     img = base64.b64encode((ROOT / "assets/img/author.jpg").read_bytes()).decode()
-    return (f'<div class="author"><img src="data:image/jpeg;base64,{img}" alt="Максим Поципух" width="64" height="64">'
-            '<span class="author-txt"><span>Максим Поципух</span><span class="author-links">Maxim Potsipukh · '
+    return (f'<div class="author"><a href="https://massimo-pazzi.github.io/" title="Все кейсы автора"><img src="data:image/jpeg;base64,{img}" alt="Максим Поципух" width="64" height="64"></a>'
+            '<span class="author-txt"><a class="author-name" href="https://massimo-pazzi.github.io/" title="Все кейсы автора">Максим Поципух</a><span class="author-links">Maxim Potsipukh · '
             '<a href="https://t.me/maxim_potsipukh" target="_blank" rel="noopener">Telegram</a> · '
             '<a href="https://max.ru/u/f9LHodD0cOI-rqGbPaCc2EshAXaEgw4ABwO8e2-ng4zK-otGeBnO04IzH5g" target="_blank" rel="noopener">Max</a></span></span></div>')
 
@@ -293,7 +293,7 @@ h1{font-size:clamp(1.7rem,4.2vw,2.3rem); line-height:1.18; font-weight:700; lett
 h2{font-size:1.28rem; line-height:1.3; font-weight:650; text-wrap:balance; margin:46px 0 12px; padding-top:22px; border-top:1px solid var(--rule);}
 .author{display:flex; align-items:center; gap:12px; margin:4px 0 16px; font-weight:600; font-size:15px;}
 .author img{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--rule);}
-.author-txt{display:flex; flex-direction:column; gap:2px;} .author-links{font-weight:400; font-size:13.5px; color:var(--muted);} .author-links a{color:var(--accent);}
+.author-txt{display:flex; flex-direction:column; gap:2px;} .author-name{color:inherit; text-decoration:none;} .author-name:hover{color:var(--accent); text-decoration:underline;} .author a img{display:block;} .author-links{font-weight:400; font-size:13.5px; color:var(--muted);} .author-links a{color:var(--accent);}
 .author + p em{color:var(--ink-2); font-size:15px;}
 p{margin:0 0 14px;} strong{font-weight:620;} hr{display:none;}
 .chart{margin:16px 0 22px; background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:14px 16px 12px;}
