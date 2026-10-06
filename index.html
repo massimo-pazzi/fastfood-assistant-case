@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ИИ-ассистент без данных</title>
+<meta name="description" content="Портфолио-кейс менеджера продукта с ИИ: как спроектировать ИИ-ассистента для приложения сети быстрого питания, когда заказчик не дал ни сценариев, ни статистики обращений">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f6f7; --surface:#ffffff; --ink:#18202a; --ink-2:#4b5662; --muted:#6c7782;
+  --rule:#d9dee3; --accent:#1f5fae; --accent-soft:#e6eef8; --neutral:#aab2bb;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#a07800; --ok:#1b8a5a; --warn:#a36b00; --no:#8a929b;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ color-scheme:dark;
+    --bg:#11161c; --surface:#171d24; --ink:#e7ebef; --ink-2:#b5bec7; --muted:#8c96a0;
+    --rule:#2c343d; --accent:#79a9e8; --accent-soft:#1c2632; --neutral:#5d6670;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --ok:#3fbf86; --warn:#e0a640; --no:#7d8791; }
+}
+:root[data-theme="dark"]{ color-scheme:dark;
+  --bg:#11161c; --surface:#171d24; --ink:#e7ebef; --ink-2:#b5bec7; --muted:#8c96a0;
+  --rule:#2c343d; --accent:#79a9e8; --accent-soft:#1c2632; --neutral:#5d6670;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --ok:#3fbf86; --warn:#e0a640; --no:#7d8791; }
+body{margin:0; background:var(--bg); color:var(--ink); font-family:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:17px; line-height:1.62; padding-inline:16px; padding-block:40px 64px;}
+.page{max-width:48rem; margin:0 auto;} a{color:var(--accent);}
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin:0 0 14px;}
+h1{font-size:clamp(1.7rem,4.2vw,2.3rem); line-height:1.18; font-weight:700; letter-spacing:-.01em; text-wrap:balance; margin:0 0 16px;}
+h2{font-size:1.28rem; line-height:1.3; font-weight:650; text-wrap:balance; margin:46px 0 12px; padding-top:22px; border-top:1px solid var(--rule);}
+.author{display:flex; align-items:center; gap:12px; margin:4px 0 16px; font-weight:600; font-size:15px;}
+.author img{width:64px; height:64px; border-radius:50%; object-fit:cover; border:1px solid var(--rule);}
+.author + p em{color:var(--ink-2); font-size:15px;}
+p{margin:0 0 14px;} strong{font-weight:620;} hr{display:none;}
+.chart{margin:16px 0 22px; background:var(--surface); border:1px solid var(--rule); border-radius:6px; padding:14px 16px 12px;}
+.chart-title{font-weight:600; font-size:14.5px; margin-bottom:10px; line-height:1.4;}
+.note{font-size:12.5px; color:var(--muted); margin:10px 0 0; line-height:1.5;}
+.flow{display:grid; grid-template-columns:1fr auto 1fr auto 1fr auto 1fr; gap:8px; align-items:stretch;}
+.flow-col{border:1px solid var(--rule); border-radius:6px; padding:10px 12px; font-size:13px; line-height:1.45;} .flow-col p{margin:0;}
+.flow-h{font-weight:650; font-size:12.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-2); margin-bottom:6px;}
+.flow-col.core{background:var(--accent-soft); border-color:var(--accent);} .flow-col.core .flow-h{color:var(--accent);}
+.arrow{align-self:center; color:var(--muted); font-size:20px;}
+@media (max-width:700px){ .flow{grid-template-columns:1fr;} .arrow{transform:rotate(90deg); justify-self:center;} }
+.funnel{display:grid; gap:8px;}
+.fn-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:center;}
+.fn-bar{box-sizing:border-box; max-width:100%; background:var(--s1); color:#fff; border-radius:4px; padding:7px 10px; font-weight:600; font-size:14px; min-width:9em; justify-self:end;}
+.fn-row:last-child .fn-bar{background:var(--s2);}
+.fn-l{font-size:13.5px; line-height:1.35;} .fn-l span{display:block; color:var(--muted); font-size:12.5px;}
+.table-wrap{overflow-x:auto;}
+table{border-collapse:collapse; width:100%; font-size:14px;}
+th,td{text-align:left; padding:8px 10px 8px 0; border-bottom:1px solid var(--rule); vertical-align:top;}
+th{font-weight:600; color:var(--ink-2); font-size:12.5px;}
+.matrix td:first-child{font-weight:550; min-width:11em;} .matrix th:last-child,.matrix td:last-child{background:var(--accent-soft); padding-left:8px;}
+.price td:last-child{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+.y{color:var(--ok); font-weight:600;} .p{color:var(--warn); font-weight:600;} .n{color:var(--no);}
+.steps{margin:0; padding-left:1.4em; columns:2; column-gap:28px; font-size:14px;} .steps li{margin-bottom:6px; break-inside:avoid;}
+@media (max-width:640px){ .steps{columns:1;} }
+.pairs{display:grid; gap:12px;}
+.pair{display:grid; grid-template-columns:minmax(9em,13em) 1fr; gap:12px; align-items:center; font-size:13.5px;}
+.pr-l span{display:block; color:var(--muted); font-size:12px;}
+.pr-bars{display:grid; gap:4px;}
+.pb{display:flex; align-items:center; gap:8px; font-size:12.5px; font-variant-numeric:tabular-nums;} .pb span{white-space:nowrap;}
+.bar{height:14px; border-radius:3px; min-width:3px;} .bar.s1{background:var(--s1);} .bar.s2{background:var(--s2);}
+.legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12.5px; color:var(--ink-2); margin-top:12px;}
+.legend span{display:inline-flex; align-items:center; gap:6px;} .sw{display:inline-block; width:11px; height:11px; border-radius:2px;}
+.sw.s1{background:var(--s1);} .sw.s2{background:var(--s2);}
+.chart-scroll{overflow-x:auto;} .chart svg{display:block; width:100%; min-width:560px; height:auto;}
+.grid{stroke:var(--rule); stroke-width:1;} .tick{fill:var(--muted); font-size:11px; font-family:"IBM Plex Mono",ui-monospace,monospace;}
+.target{stroke:var(--ink-2); stroke-width:1.2; stroke-dasharray:5 4;} .median{stroke:var(--muted); stroke-width:1; stroke-dasharray:2 3;}
+.band-label{fill:var(--muted); font-size:11px;} .label{fill:var(--ink); font-size:12px;}
+.line{fill:none; stroke-width:2.2;} .line.s1{stroke:var(--s1);} .line.s2{stroke:var(--s2);} .line.s3{stroke:var(--s3);} .line.s4{stroke:var(--s4);}
+.dot{stroke:var(--surface); stroke-width:2;} .dot.s1{fill:var(--s1);} .dot.s2{fill:var(--s2);} .dot.s3{fill:var(--s3);} .dot.s4{fill:var(--s4);}
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:12px;}
+.kpi{border:1px solid var(--rule); border-radius:6px; padding:12px 14px;}
+.kpi-v{font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums;} .kpi-l{font-size:13px; color:var(--ink-2); margin-top:4px; line-height:1.4;}
+.num td:not(:first-child),.num th:not(:first-child){text-align:right; font-variant-numeric:tabular-nums;}
+.txtlast td:last-child,.txtlast th:last-child{text-align:left;}
+.dl-link{margin:-12px 0 22px; font-size:13.5px;}
+.chart.live iframe{display:block; width:100%; border:0; border-radius:4px; background:#fff;}
+.sources{font-size:14.5px; line-height:1.55; padding-left:1.5em;}
+@media (max-width:520px){ body{font-size:16px; padding-block:24px 48px;} .pair,.fn-row{grid-template-columns:1fr;} .fn-bar{justify-self:start;} }
+.ranges{display:grid; gap:7px;}
+.rg{display:grid; grid-template-columns:minmax(10em,16em) 1fr; gap:12px; align-items:center; font-size:13.5px;}
+.rg-bar{display:flex; align-items:center; gap:0; font-size:12.5px; font-variant-numeric:tabular-nums;}
+.rg-lo{height:14px; background:var(--s1); border-radius:3px 0 0 3px;} .rg-hi{height:14px; background:var(--s1); opacity:.35; border-radius:0 3px 3px 0;}
+.rg-bar span{margin-left:8px; white-space:nowrap;} .sw.s1l{background:var(--s1); opacity:.35;}
+.cols3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+.c3{border:1px solid var(--rule); border-radius:6px; padding:10px 12px; font-size:13.5px; line-height:1.45;}
+.c3 ul{margin:0; padding-left:1.1em;} .c3 li{margin-bottom:4px;}
+.c3.core{background:var(--accent-soft); border-color:var(--accent);} .c3.core .flow-h{color:var(--accent);}
+.tiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px;}
+.tile{border:1px solid var(--rule); border-radius:6px; padding:10px 12px; font-size:13px; line-height:1.4;}
+.tile-n{font-size:1.5rem; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums;}
+.tile-h{font-weight:620; margin:2px 0;} .tile-s{color:var(--ink-2); font-size:12.5px;} .tile-e{color:var(--muted); font-size:12px; margin-top:4px;}
+.num td:not(:first-child),.num th:not(:first-child){text-align:right; font-variant-numeric:tabular-nums;}
+.txtlast td:last-child,.txtlast th:last-child{text-align:left;}
+@media (max-width:640px){ .cols3{grid-template-columns:1fr;} .rg{grid-template-columns:1fr; gap:4px;} }
+</style>
+</head>
+<body>
+<main class="page">
+<p class="eyebrow">Портфолио-кейс: продукт с ИИ · Максим Поципух · Сентябрь 2025</p>
+<h1>Как спроектировать ИИ-ассистента для приложения, не имея данных заказчика</h1>
+<div class="author"><img src="data:image/jpeg;base64,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" alt="Максим Поципух" width="64" height="64"><span>Максим Поципух</span></div>
+<p><em>Видение продукта для тендера федеральной сети быстрого питания: ИИ-ассистент в
+мобильном приложении, который разбирает обращения гостей вместо контакт-центра.
+Автор — Максим Поципух. Модель и данные —
+<a href="https://github.com/massimo-pazzi/fastfood-assistant-case">в репозитории проекта</a>.</em></p>
+<hr />
+<h2>Предпосылки</h2>
+<p>Заказчик — федеральная сеть быстрого питания: сотни ресторанов в десятках
+регионов и мобильное приложение с миллионами установок. Гости пишут и звонят в
+контакт-центр по одним и тем же поводам: где заказ, почему в нём чего-то не
+хватает, куда делись баллы. Сеть объявила тендер на ИИ-ассистента в
+приложении, который возьмёт эти вопросы на себя.</p>
+<p>В техническом задании были требования к инфраструктуре и безопасности, но не
+было главного для продукта: сценариев, статистики обращений и данных об
+активной аудитории. Заказчик пообещал передать базу знаний и схемы после
+переговоров, а видение продукта нужно было сдать вместе с предложением.</p>
+<p><strong>Моя роль.</strong> Я подготовил видение продукта и всё предложение целиком:
+исследование заказчика и конкурентов, разбор обращений, функциональность и
+сценарии, оценку нагрузки, а также защиту предложения на тендере. Итог
+тендера не раскрывается.</p>
+<figure class="chart"><figcaption class="chart-title">Что предлагалось: ассистент в приложении между гостем и контакт-центром</figcaption><div class="flow"><div class="flow-col"><div class="flow-h">Гость в приложении</div><p>пишет вопрос на своём языке в разделе поддержки</p></div><div class="arrow" aria-hidden="true">→</div><div class="flow-col core"><div class="flow-h">ИИ-ассистент</div><p>определяет язык и тему, берёт заказы и баллы гостя из CRM</p></div><div class="arrow" aria-hidden="true">→</div><div class="flow-col"><div class="flow-h">Ответ</div><p>статус заказа, баллы, состав блюда, ближайший ресторан, возврат</p></div><div class="arrow" aria-hidden="true">→</div><div class="flow-col"><div class="flow-h">Оператор</div><p>сложные случаи — с историей диалога и переводом на русский</p></div></div></figure>
+
+<hr />
+<h2>1. Где брать данные, если заказчик их не даёт</h2>
+<p>Без статистики контакт-центра продукт легко спроектировать «от технологии»:
+взять возможности языковой модели и придумать, что ещё она могла бы делать.
+Я пошёл от другого вопроса — с чем гости приходят в поддержку — и собрал
+ответ из трёх открытых источников. Каждый закрывает слабое место другого.</p>
+<figure class="chart"><figcaption class="chart-title">Три источника вместо данных заказчика</figcaption><div class="table-wrap"><table class=""><thead><tr><th>Источник</th><th>Что даёт</th><th>Ограничение</th></tr></thead><tbody><tr><td>Открытые жалобы, отзывы и FAQ сетей быстрого питания</td><td>Темы обращений и их примерная частота, типовые формулировки</td><td>Это оценка по отзывам, а не статистика контакт-центра</td></tr><tr><td>Отзывы гостей и сотрудников о самом заказчике</td><td>Местная специфика: неполные заказы, возвраты, акции, скорость поддержки</td><td>Отдельные отзывы, а не репрезентативная выборка</td></tr><tr><td>Решения конкурентов</td><td>Что уже сделано на рынке и где технология ломается</td><td>Компании почти не раскрывают эффект</td></tr></tbody></table></div></figure>
+
+<p>Ни одна крупная сеть быстрого питания не публикует разбивку обращений в
+контакт-центр по темам. Поэтому доли тем в этом кейсе — оценка, которую я
+сделал для предложения, а не данные заказчика. Её задача — не точность до
+процента, а порядок приоритетов: что делать в первой версии, а что потом.</p>
+<h2>2. С чем обращаются в контакт-центр</h2>
+<figure class="chart"><figcaption class="chart-title">Темы обращений гостей и их доля в потоке, оценка</figcaption><div class="ranges"><div class="rg"><div class="rg-l">Статус и проблемы с заказом</div><div class="rg-bar"><div class="rg-lo" style="width:75.0%"></div><div class="rg-hi" style="width:25.0%"></div><span>30–40%</span></div></div><div class="rg"><div class="rg-l">Качество еды и обслуживания</div><div class="rg-bar"><div class="rg-lo" style="width:50.0%"></div><div class="rg-hi" style="width:12.5%"></div><span>20–25%</span></div></div><div class="rg"><div class="rg-l">Программа лояльности и акции</div><div class="rg-bar"><div class="rg-lo" style="width:37.5%"></div><div class="rg-hi" style="width:0.0%"></div><span>15%</span></div></div><div class="rg"><div class="rg-l">Меню и состав блюд</div><div class="rg-bar"><div class="rg-lo" style="width:25.0%"></div><div class="rg-hi" style="width:0.0%"></div><span>10%</span></div></div><div class="rg"><div class="rg-l">Рестораны и часы работы</div><div class="rg-bar"><div class="rg-lo" style="width:20.0%"></div><div class="rg-hi" style="width:0.0%"></div><span>8%</span></div></div><div class="rg"><div class="rg-l">Доставка и оплата</div><div class="rg-bar"><div class="rg-lo" style="width:17.5%"></div><div class="rg-hi" style="width:0.0%"></div><span>7%</span></div></div><div class="rg"><div class="rg-l">Технические проблемы с приложением</div><div class="rg-bar"><div class="rg-lo" style="width:12.5%"></div><div class="rg-hi" style="width:0.0%"></div><span>5%</span></div></div><div class="rg"><div class="rg-l">Чистота и гигиена</div><div class="rg-bar"><div class="rg-lo" style="width:7.5%"></div><div class="rg-hi" style="width:0.0%"></div><span>3%</span></div></div><div class="rg"><div class="rg-l">Корпоративные вопросы</div><div class="rg-bar"><div class="rg-lo" style="width:5.0%"></div><div class="rg-hi" style="width:0.0%"></div><span>2%</span></div></div><div class="rg"><div class="rg-l">Другое</div><div class="rg-bar"><div class="rg-lo" style="width:0.0%"></div><div class="rg-hi" style="width:12.5%"></div><span>до 5%</span></div></div></div><div class="legend"><span><i class="sw s1"></i>нижняя граница оценки</span><span><i class="sw s1l"></i>разброс оценки</span></div><p class="note">Оценка для предложения по открытым жалобам, отзывам и FAQ сетей быстрого питания; публичной статистики контакт-центров сети не раскрывают. Три верхние темы — 65–80% потока. Данные — data/topics.csv.</p></figure>
+
+<p>Картина получилась сильно неравномерной. Три темы — заказы, жалобы на еду и
+обслуживание, программа лояльности — дают от двух третей до четырёх пятых
+всего потока. Значит, ассистент окупает себя на этих трёх темах, а
+остальные семь нужны, чтобы гость не упирался в «я вас не понимаю» и не
+уходил звонить.</p>
+<p>Отзывы о самом заказчике подтвердили ту же тройку и добавили местную
+специфику. Гости жалуются на неполные заказы и на деньги, которые списались,
+а возврат не пришёл. Акции банков-партнёров с кэшбэком приводят в поддержку
+вопросы о том, почему не начислили кэшбэк. А поддержка через приложение и
+соцсети отвечает медленно.</p>
+<h2>3. Чего ассистент не делает</h2>
+<p>Самое важное продуктовое решение — границы. Ассистент работает в
+авторизованной зоне приложения, читает из CRM историю заказов и баллы гостя
+и отвечает на вопросы. Но заказы он не оформляет и оплату не принимает: это
+уже делает само приложение, и дублировать его в чате — значит удвоить
+поверхность для ошибок там, где ошибка стоит денег.</p>
+<figure class="chart"><figcaption class="chart-title">Границы продукта</figcaption><div class="cols3"><div class="c3 core"><div class="flow-h">Отвечает сам</div><ul><li>Статус и состав заказа, история последних заказов</li><li>Баллы, списания и действующие акции</li><li>Состав блюд, калорийность, аллергены</li><li>Ближайший ресторан и часы работы</li><li>Возврат или довоз при неполном заказе</li><li>Рекомендации по истории заказов</li></ul></div><div class="c3"><div class="flow-h">Передаёт оператору</div><ul><li>Жалобы на качество еды и обслуживание</li><li>Чистота и гигиена в ресторане</li><li>Спорные возвраты и компенсации</li><li>Всё, что не распознал уверенно</li></ul></div><div class="c3"><div class="flow-h">Не делает</div><ul><li>Не оформляет заказы и не принимает оплату</li><li>Не сообщает о готовности заказа — это делает приложение</li><li>Не показывает данные других пользователей</li><li>Не отвечает на темы вне сервиса</li></ul></div></div></figure>
+
+<p>Сложные случаи — жалобы на качество еды, гигиену, спорные возвраты — ассистент
+не решает сам, а передаёт в омниканальную платформу контакт-центра вместе с
+историей диалога. Гостю не нужно пересказывать всё заново, а оператор сразу
+видит заказ и суть претензии. Отдельно в предложении заложен отказ на
+запросы вне темы, например на просьбу показать данные другого пользователя.</p>
+<h2>4. Мультиязычность как продуктовое решение</h2>
+<p>Сеть работает во многих регионах, и для части гостей русский — не родной
+язык. Я предложил, чтобы ассистент определял язык пользователя и отвечал на
+нём: кроме русского и английского — на татарском, башкирском, чеченском,
+якутском и других языках регионов.</p>
+<p>Мультиязычность не увеличивает число сценариев: диалоги те же, меняется
+язык. Но в каждый сценарий добавляется определение языка и переключение, а
+в передачу оператору — перевод. Это усложняет разработку, и в предложении
+это сказано прямо.</p>
+<h2>5. Дерево сценариев</h2>
+<p>Десять тем дают десять базовых сценариев. Внутри темы обращения
+различаются: «где мой заказ» и «в заказе не хватает картошки» — разные
+ветки диалога с разной развязкой. Подтипы каждой темы я выделил по тем же
+отзывам и жалобам.</p>
+<figure class="chart"><figcaption class="chart-title">Дерево сценариев: 10 базовых и 54 вариаций — всего 64</figcaption><div class="tiles"><div class="tile"><div class="tile-n">8</div><div class="tile-h">Статус и проблемы с заказом</div><div class="tile-s">1 базовый + 7 вариаций</div><div class="tile-e">Где мой заказ, неполный заказ (возврат или довоз), не мой заказ, изменить, отменить, вернуть деньги</div></div><div class="tile"><div class="tile-n">6</div><div class="tile-h">Качество еды и обслуживания</div><div class="tile-s">1 базовый + 5 вариаций</div><div class="tile-e">Холодная, слишком горячая, ошибка в составе, посторонний предмет, испорченная еда</div></div><div class="tile"><div class="tile-n">6</div><div class="tile-h">Программа лояльности и акции</div><div class="tile-s">1 базовый + 5 вариаций</div><div class="tile-e">Баллы, активация акции, список акций, нет товара по акции, отказ в акции</div></div><div class="tile"><div class="tile-n">8</div><div class="tile-h">Меню и состав блюд</div><div class="tile-s">1 базовый + 7 вариаций</div><div class="tile-e">Состав, калорийность, замена и добавка ингредиентов, что есть в меню, где купить, время завтраков</div></div><div class="tile"><div class="tile-n">7</div><div class="tile-h">Рестораны и часы работы</div><div class="tile-s">1 базовый + 6 вариаций</div><div class="tile-e">Ближайший ресторан, часы работы, наличие позиции</div></div><div class="tile"><div class="tile-n">1</div><div class="tile-h">Доставка и оплата</div><div class="tile-s">1 базовый</div><div class="tile-e">Возвраты и статусы доставки покрыты сценарием заказа</div></div><div class="tile"><div class="tile-n">7</div><div class="tile-h">Технические проблемы с приложением</div><div class="tile-s">1 базовый + 6 вариаций</div><div class="tile-e">Не работает, регистрация, оплата в приложении</div></div><div class="tile"><div class="tile-n">7</div><div class="tile-h">Чистота и гигиена</div><div class="tile-s">1 базовый + 6 вариаций</div><div class="tile-e">Жалоба на ресторан — передача оператору</div></div><div class="tile"><div class="tile-n">7</div><div class="tile-h">Корпоративные вопросы</div><div class="tile-s">1 базовый + 6 вариаций</div><div class="tile-e">Работа в сети, корпоративные заказы</div></div><div class="tile"><div class="tile-n">7</div><div class="tile-h">Другое</div><div class="tile-s">1 базовый + 6 вариаций</div><div class="tile-e">Франчайзинг, спонсорство, забытые вещи</div></div></div><p class="note">Мультиязычность не добавляет сценариев: меняется язык диалога, а не его ветки.</p></figure>
+
+<p>Итог — 64 сценария: 10 базовых и 54 вариации. Это число важно для
+предложения: от него зависят объём разработки, разметки и тестирования, а
+значит, срок и цена.</p>
+<h2>6. Нагрузка и инфраструктура</h2>
+<p>Данных об активной аудитории заказчик не дал, поэтому нагрузку я оценивал
+сверху, по установкам приложения: до 750 тысяч обращений в день с пиками в
+обед, вечером и в выходные. Для инфраструктуры важны не обращения, а
+сообщения: в одном обращении 4–6 реплик гостя.</p>
+<figure class="chart"><figcaption class="chart-title">От обращений к сообщениям: какую нагрузку должен держать ассистент</figcaption><div class="table-wrap"><table class="num txtlast"><thead><tr><th>Показатель</th><th>Значение</th><th>Откуда</th></tr></thead><tbody><tr><td>Обращений в день, верхняя граница</td><td>750 000</td><td>оценка по установкам приложения</td></tr><tr><td>Сообщений гостя в одном обращении</td><td>4–6</td><td>вопрос, ответ, уточнение, передача оператору</td></tr><tr><td>Сообщений в день</td><td>≈ 3,75 млн</td><td>при 5 сообщениях в обращении</td></tr><tr><td>Сообщений в секунду, в среднем</td><td>≈ 65</td><td>нагрузка распределена на 16 часов</td></tr><tr><td>Новых обращений в секунду, в пик</td><td>50</td><td>обед, вечер, выходные</td></tr><tr><td><strong>Сообщений в минуту, в пик</strong></td><td><strong>≈ 15 000</strong></td><td>по этой цифре делается сайзинг серверов</td></tr></tbody></table></div><p class="note">Данных об активной аудитории заказчик не предоставил, поэтому нагрузка оценена сверху. Расчёт — scripts/model.py.</p></figure>
+
+<p>В пике это около 250 сообщений в секунду, или 15 тысяч в минуту. По этой
+цифре делается сайзинг оборудования. Диалоговая платформа сама число
+обращений не ограничивает — бесперебойность определяет железо, на котором
+она стоит. Поэтому в расчёт заложено несколько серверов, в том числе для
+георезерва. Требования заказчика к размещению были жёсткими: собственный
+контур без выхода в интернет, резервирование в двух географических зонах с
+переключением меньше чем за минуту, защита персональных данных по 152-ФЗ.
+Ассистент хранит только идентификатор пользователя, а журналы диалогов —
+в обезличенном виде.</p>
+<p>Решение строится на готовой диалоговой платформе подрядчика, а не
+разрабатывается с нуля. Срок до первой рабочей версии — 11 месяцев с
+подписания договора, полный запуск — ещё 6–12 месяцев.</p>
+<h2>7. ИИ-решения у конкурентов по отрасли заказчика</h2>
+<p>Ассистентов для гостей в приложениях у крупных мировых сетей почти нет.
+Искусственный интеллект в фастфуде пока ушёл в две другие стороны: голосовой
+приём заказа в окне для автомобилистов и помощники для персонала. И там, и
+там видно, где технология ломается.</p>
+<figure class="chart"><figcaption class="chart-title">ИИ в крупных сетях быстрого питания</figcaption><div class="table-wrap"><table class=""><thead><tr><th>Сеть</th><th>Что сделали</th><th>Когда и чем закончилось</th></tr></thead><tbody><tr><td><strong>McDonald's</strong></td><td>ИИ-бот Olivia для найма персонала на платформе McHire. Ассистента для гостей в приложении нет</td><td>Июнь–июль 2025: исследователи нашли тестовый доступ с паролем «123456» к данным до 64 млн кандидатов <a href="https://ian.sh/mcdonalds" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>McDonald's и IBM</strong></td><td>Голосовой приём заказа в окне для автомобилистов, около 100 ресторанов в США</td><td>Тест с 2021 года закрыт в июне 2024-го; точность — около 80% при цели 95% (оценка BTIG) <a href="https://www.nrn.com/quick-service/mcdonald-s-is-ending-its-ai-drive-thru-test-with-ibm" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>Burger King</strong></td><td>Бот в Facebook Messenger: заказ из меню, ближайший ресторан, оплата</td><td>Запущен в 2016 году <a href="https://fortune.com/2016/05/18/burger-king-bot/" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>Burger King, Новая Зеландия</strong></td><td>ИИ-приём заказа в окне для автомобилистов, ассистент Patty</td><td>Тест с марта 2024 года в 4 ресторанах Окленда; к июлю 2026-го — 40 ресторанов <a href="https://thespinoff.co.nz/kai/21-07-2026/just-useless-what-its-like-working-with-burger-kings-ai-assistant" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>Burger King, США</strong></td><td>Patty — голосовой помощник в гарнитурах сотрудников: рецептуры, стоп-лист, разбор диалогов</td><td>Объявлен в феврале 2026 года, пилот в 500 ресторанах <a href="https://www.nrn.com/quick-service/burger-king-is-launching-an-ai-powered-employee-assistant" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>Taco Bell, KFC, Pizza Hut</strong></td><td>Голосовой ИИ в окне для автомобилистов вместе с NVIDIA</td><td>500 ресторанов во втором квартале 2025 года; в августе 2025-го Taco Bell признал проблемы — например, троллинг заказом 18 000 стаканов воды <a href="https://techcrunch.com/2025/08/30/taco-bell-is-having-second-thoughts-about-relying-on-ai-at-the-drive-through/" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>KFC, Тайвань</strong></td><td>Цифровой человек Kala на экранах в ресторанах: меню, вопросы, помощь с заказом</td><td>Апрель 2024 года, более 70 ресторанов <a href="https://www.prnewswire.com/apac/news-releases/pantheon-lab-powers-kfc-taiwans-revolutionary-ai-intern-kala-302112715.html" target="_blank" rel="noopener">↗</a></td></tr><tr><td><strong>KFC и Baidu, Китай</strong></td><td>«Умные рестораны»: голосовой робот-ассистент, распознавание лиц и подсказка заказа</td><td>Пилоты 2016 года <a href="https://www.nasdaq.com/articles/baidu-bidu-and-kfc-team-up-for-smart-restaurant-in-china-2016-12-29" target="_blank" rel="noopener">↗</a></td></tr></tbody></table></div></figure>
+
+<p>Для нашего продукта отсюда два вывода. Первый: голосовой приём заказа — самая
+рискованная зона, там ошибка сразу превращается в лишнюю позицию в чеке,
+поэтому ассистент в предложении заказы не принимает. Второй: чат-бот — это
+ещё и риск безопасности. История с ботом для найма, где тестовая учётная
+запись с паролем «123456» открывала доступ к данным миллионов кандидатов,
+— прямой аргумент за требования заказчика к закрытому контуру и обезличиванию.</p>
+<h2>8. Метрики успеха</h2>
+<p>В предложении цель сформулирована как снижение обращений в контакт-центр на
+30–50%. Отраслевого источника для такой цифры нет: сети быстрого питания
+эффект своих ботов не раскрывают. Поэтому это гипотеза, которую проверяет
+пилот, и проверять её нужно не одной цифрой, а набором метрик.</p>
+<figure class="chart"><figcaption class="chart-title">Как проверить, что ассистент работает</figcaption><div class="table-wrap"><table class=""><thead><tr><th>Метрика</th><th>Как считается</th><th>Зачем</th></tr></thead><tbody><tr><td>Доля обращений, закрытых без оператора</td><td>Закрытые ассистентом обращения ко всем обращениям</td><td>Главный эффект для контакт-центра</td></tr><tr><td>Доля передач оператору по темам</td><td>Передачи к обращениям — отдельно по каждой теме</td><td>Показывает, каких сценариев не хватает</td></tr><tr><td>Оценка гостя после диалога</td><td>Короткий опрос в конце диалога</td><td>Не даёт выдать «отфутболивание» за успех</td></tr><tr><td>Повторные обращения по той же теме</td><td>Гость вернулся с тем же вопросом в течение недели</td><td>Проблема решена по-настоящему, а не формально</td></tr><tr><td>Точность темы и языка</td><td>Ручная разметка выборки диалогов</td><td>Качество модели</td></tr><tr><td>Обращения в контакт-центр по темам ассистента</td><td>До и после запуска, по тем же темам</td><td>Проверка гипотезы о снижении на 30–50%</td></tr></tbody></table></div></figure>
+
+<p>Главная из них — доля обращений, которые ассистент закрыл без оператора.
+Если она растёт, а оценка гостей падает, значит, бот не решает проблему, а
+просто не пускает к человеку. Поэтому оценка гостя и повторные обращения по
+той же теме стоят рядом с ней, а не отдельно.</p>
+<h2>9. Результат</h2>
+<p>Итог тендера не раскрывается.</p>
+<hr />
+<h2>Источники</h2>
+<ol class="sources"><li>McDonald's: <a href="https://ian.sh/mcdonalds" target="_blank" rel="noopener">ian.sh</a></li><li>McDonald's и IBM: <a href="https://www.nrn.com/quick-service/mcdonald-s-is-ending-its-ai-drive-thru-test-with-ibm" target="_blank" rel="noopener">www.nrn.com</a></li><li>Burger King: <a href="https://fortune.com/2016/05/18/burger-king-bot/" target="_blank" rel="noopener">fortune.com</a></li><li>Burger King, Новая Зеландия: <a href="https://thespinoff.co.nz/kai/21-07-2026/just-useless-what-its-like-working-with-burger-kings-ai-assistant" target="_blank" rel="noopener">thespinoff.co.nz</a></li><li>Burger King, США: <a href="https://www.nrn.com/quick-service/burger-king-is-launching-an-ai-powered-employee-assistant" target="_blank" rel="noopener">www.nrn.com</a></li><li>Taco Bell, KFC, Pizza Hut: <a href="https://techcrunch.com/2025/08/30/taco-bell-is-having-second-thoughts-about-relying-on-ai-at-the-drive-through/" target="_blank" rel="noopener">techcrunch.com</a></li><li>KFC, Тайвань: <a href="https://www.prnewswire.com/apac/news-releases/pantheon-lab-powers-kfc-taiwans-revolutionary-ai-intern-kala-302112715.html" target="_blank" rel="noopener">www.prnewswire.com</a></li><li>KFC и Baidu, Китай: <a href="https://www.nasdaq.com/articles/baidu-bidu-and-kfc-team-up-for-smart-restaurant-in-china-2016-12-29" target="_blank" rel="noopener">www.nasdaq.com</a></li><li>Видение продукта и коммерческое предложение (не публикуются): требования заказчика, функциональность, сценарии, оценка нагрузки, сроки</li></ol><p class="note">Расчёты и данные для графиков — <a href="https://github.com/massimo-pazzi/fastfood-assistant-case/blob/main/scripts/model.py" target="_blank" rel="noopener">scripts/model.py</a> и <a href="https://github.com/massimo-pazzi/fastfood-assistant-case/tree/main/data" target="_blank" rel="noopener">data/</a>.</p>
+</main>
+</body>
+</html>
