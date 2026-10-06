@@ -8,6 +8,8 @@ import base64
 import sys
 from pathlib import Path
 
+import json
+import re
 import markdown
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -258,7 +260,7 @@ def fig_refs():
 def author_block():
     img = base64.b64encode((ROOT / "assets/img/author.jpg").read_bytes()).decode()
     return (f'<div class="author"><img src="data:image/jpeg;base64,{img}" alt="Максим Поципух" width="64" height="64">'
-            '<span class="author-txt"><span>Максим Поципух</span><span class="author-links">'
+            '<span class="author-txt"><span>Максим Поципух</span><span class="author-links">Maxim Potsipukh · '
             '<a href="https://t.me/maxim_potsipukh" target="_blank" rel="noopener">Telegram</a> · '
             '<a href="https://max.ru/u/f9LHodD0cOI-rqGbPaCc2EshAXaEgw4ABwO8e2-ng4zK-otGeBnO04IzH5g" target="_blank" rel="noopener">Max</a></span></span></div>')
 
@@ -385,6 +387,64 @@ def other_cases(current):
              ".oc-title{font-weight:600; font-size:15px; line-height:1.35;} .oc-go{margin-top:auto; font-size:13px; color:var(--accent);}</style>")
     return f'{style}<h2>Другие кейсы автора</h2><div class="oc-grid">{tiles}</div>\n'
 
+
+# SEO: заголовок, описание, автор, canonical, Open Graph и JSON-LD — одинаково во всех кейсах портфолио.
+AUTHOR = {"@type": "Person", "name": "Максим Поципух", "alternateName": "Maxim Potsipukh",
+          "sameAs": ["https://t.me/maxim_potsipukh",
+                     "https://max.ru/u/f9LHodD0cOI-rqGbPaCc2EshAXaEgw4ABwO8e2-ng4zK-otGeBnO04IzH5g",
+                     "https://github.com/massimo-pazzi"]}
+OG_IMAGE = "https://massimo-pazzi.github.io/rief-2026-talk/assets/img/og.jpg"
+SEO = {
+    "hotel-market-case": ("Гостиничный рынок Петербурга — Максим Поципух",
+                          "Рост цен в отелях Петербурга перестал окупаться",
+                          "Исследование Максима Поципуха по открытым данным: почему рост цен в отелях Петербурга "
+                          "перестал окупаться — спрос и номерной фонд, сезонность, сегменты, города и прогноз."),
+    "housing-digital-twin-case": ("Цифровой двойник ЖКХ — Максим Поципух",
+                                  "Цифровой двойник жилого фонда Москвы: от аварийного ремонта к прогнозу поломок",
+                                  "Продуктовый кейс Максима Поципуха: цифровой двойник жилого фонда Москвы и прогноз "
+                                  "отказов инженерных систем домов — для кого продукт, метрики, прототип, этапы внедрения."),
+    "b2b-value-case": ("Окупаемость без маржи — Максим Поципух",
+                       "Как доказать окупаемость ИИ-проекта, не зная маржи заказчика",
+                       "Кейс Максима Поципуха: обоснование ИИ-проекта для грузовой авиакомпании — цена бездействия, "
+                       "две картины ценности и пороговая маржа, которую заказчик проверяет сам."),
+    "fastfood-assistant-case": ("ИИ-ассистент без данных — Максим Поципух",
+                                "ИИ-ассистент для федеральной сети быстрого питания: как спроектировать продукт не имея данных заказчика",
+                                "Продуктовый кейс Максима Поципуха: ИИ-ассистент в приложении федеральной сети быстрого "
+                                "питания — темы обращений, границы продукта, очерёдность релизов, нагрузка, экономика и риски."),
+    "rief-2026-talk": ("Интерфейс энергетики будущего — Максим Поципух",
+                       "Интерфейс энергетики будущего: доклад на РМЭФ-2026",
+                       "Доклад Максима Поципуха на Российском международном энергетическом форуме 2026: как "
+                       "искусственный интеллект меняет взаимодействие человека с энергетической инфраструктурой."),
+}
+
+
+def seo_head(slug):
+    title, headline, desc = SEO[slug]
+    url = f"https://massimo-pazzi.github.io/{slug}/"
+    ld = {"@context": "https://schema.org", "@type": "Article", "headline": headline, "description": desc,
+          "inLanguage": "ru", "url": url, "mainEntityOfPage": url, "image": OG_IMAGE, "author": AUTHOR}
+    q = lambda t: t.replace("&", "&amp;").replace('"', "&quot;")
+    return (f'<title>{title}</title>\n'
+            f'<meta name="description" content="{q(desc)}">\n'
+            f'<meta name="author" content="Максим Поципух (Maxim Potsipukh)">\n'
+            f'<link rel="canonical" href="{url}">\n'
+            f'<meta property="og:type" content="article">\n'
+            f'<meta property="og:locale" content="ru_RU">\n'
+            f'<meta property="og:site_name" content="Максим Поципух — портфолио">\n'
+            f'<meta property="og:title" content="{q(title)}">\n'
+            f'<meta property="og:description" content="{q(desc)}">\n'
+            f'<meta property="og:url" content="{url}">\n'
+            f'<meta property="og:image" content="{OG_IMAGE}">\n'
+            f'<meta name="twitter:card" content="summary_large_image">\n'
+            f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>')
+
+
+def apply_seo(page, slug):
+    """Заменяет <title> и description страницы на SEO-блок."""
+    page = re.sub(r'<meta name="description" content="[^"]*">\n?', "", page)
+    return re.sub(r"<title>[^<]*</title>", lambda m: seo_head(slug), page, count=1)
+
+
 def main():
     html = markdown.markdown(MD.read_text(encoding="utf-8"), extensions=["tables"])
     title, rest = html.split("</h1>", 1)
@@ -414,6 +474,7 @@ def main():
 </html>
 """
     page = page.replace("<h2>Источники</h2>", other_cases("fastfood-assistant-case") + "<h2>Источники</h2>", 1)
+    page = apply_seo(page, "fastfood-assistant-case")
     OUT.write_text(page, encoding="utf-8")
     print(f"{OUT.relative_to(ROOT)}: {len(page) // 1024} КБ, блоков: {len(FIGS)}")
 
